@@ -5,28 +5,12 @@ import os, sys, time, math
 from stat import *
 import random
 import copy
-#import multiprocessing as mp
 import pickle
 import numpy as np
 
-if sys.platform.startswith('darwin'):
-    pass
-#else:
-#    import plat
-#    if plat.ID==2:
-#        import cupy as cp
-#        import cupyx
-#    #
-#
 import csv
 from PIL import Image
 
-# LDNN Modules
-#import gpu
-#import util
-#
-#
-#
 LAYER_TYPE_INPUT   = 0
 LAYER_TYPE_HIDDEN  = 1
 LAYER_TYPE_OUTPUT  = 2
@@ -125,18 +109,6 @@ class InputLayer(Layer):
                 print((self._output_array[0]))
             #
         #
-    
-    def set_weight_index(self, ni, ii, wi):
-        pass
-        
-    def get_weight_index(self, ni, ii):
-        return 0
-        
-    def export_weight_index(self):
-        return None
-        
-    def count_weight(self):
-        return 0
 
 class HiddenLayer(Layer):
     def __init__(self, i, num_input, num_node, pre, gpu=None):
@@ -178,15 +150,12 @@ class HiddenLayer(Layer):
             return
         #
         
-        stride_1 = self._num_node * self._num_input
-        stride_2 = self._num_input
         # activation mode
         #   0 : none
         #   1 : normal
         #   2 : 0.000001
         #   3 : y/20
         a_mode = 1
-        
         self._gpu.macRelu(array_in, self._gpu_weight, self._gpu_output, self._batch_size, self._num_node, self._num_input, a_mode)
         
         if debug:
@@ -235,18 +204,20 @@ class OutputLayer(Layer):
         #
         
     def propagate(self, array_in, debug=0):
-        stride_1 = self._num_node * self._num_input
-        stride_2 = self._num_input
-        activation = 1
-
+        # activation mode
+        #   0 : none
+        #   1 : normal
+        #   2 : 0.000001
+        #   3 : y/20
+        a_mode = 0
         if self._gpu:
-            self._gpu.macRelu(array_in, self._gpu_weight, self._gpu_output, self._batch_size, self._num_node, self._num_input, 0)
-            # softmax
+            self._gpu.macRelu(array_in, self._gpu_weight, self._gpu_output, self._batch_size, self._num_node, self._num_input, a_mode)
             if debug:
                 print("output")
                 self._gpu.copy(self._output_array, self._gpu_output)
                 print((self._output_array[0]))
             #
+            # softmax
             self._gpu.softmax(self._gpu_output, self._num_node, self._batch_size)
             if debug:
                 print("softmax")
@@ -269,7 +240,6 @@ class Roster:
         self._eval_mode = 0
         self._path = ""
         self._scale_input = 1
-        #self.mem_save = 1
         
     def set_path(self, path):
         self._path = path
@@ -297,10 +267,8 @@ class Roster:
         self._labels = np.zeros((batch_size, num_class), dtype=np.float32)
         #
         if self._gpu: # OpenCL
-            self._batch_cross_entropy = np.zeros(batch_size, dtype=np.float32)
             self._gpu_input = self._gpu.dev_malloc(self._batch_data)
             self._gpu_labels = self._gpu.dev_malloc(self._labels)
-            self._gpu_entropy = self._gpu.dev_malloc(self._batch_cross_entropy)
         #
         self.input = self.get_layer_at(0)
         for layer in self.layers:
@@ -309,7 +277,6 @@ class Roster:
         self.output = layer
     
     # batch for classification
-    #def set_batch(self, data_size, num_class, train_data_batch, train_label_batch, size, offset):
     def set_batch(self, data_size, num_class, data_batch, label_batch, size, offset):
         print("Roster::set_batch(%d, %d, %d, %d)" % (data_size, num_class, size, offset))
         
@@ -369,12 +336,12 @@ class Roster:
         self.reset()
         self._gpu.copy(self._gpu_labels, labels)
     
-    def direct_set_data(self, data_array):
-        self._gpu.copy(self._gpu_input, data_array)
-        self._gpu.copy(self.input._gpu_output, self._gpu_input)
-        
-    def direct_set_label(self, label_array):
-        self._gpu.copy(self._gpu_labels, label_array)
+    #def direct_set_data(self, data_array):
+    #    self._gpu.copy(self._gpu_input, data_array)
+    #    self._gpu.copy(self.input._gpu_output, self._gpu_input)
+    #
+    #def direct_set_label(self, label_array):
+    #    self._gpu.copy(self._gpu_labels, label_array)
     
     def init_weight(self, mode=0, value=0):
         c = self.count_layers()
