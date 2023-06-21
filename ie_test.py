@@ -88,8 +88,6 @@ def classification(r, data_size, num_class, batch_size, batch_image, batch_label
     #elapsed_time = time.time() - start_time
     t = format(elapsed_time, "0")
     print(("time = %s" % (t)))
-    #print(r.get_cross_entropy())
-
     print("done")
     return float(ca) / float(batch_size)
     
