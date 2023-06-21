@@ -27,7 +27,6 @@ class Net(nn.Module):
         return F.log_softmax(x, dim=1)
 
 def main():
-    #device = torch.device("cpu")
     transform = transforms.ToTensor()
     trainset = torchvision.datasets.MNIST(root='./data', train=True, download=True, transform=transform)
     trainloader = torch.utils.data.DataLoader(trainset, batch_size=100, shuffle=True, num_workers=2)
