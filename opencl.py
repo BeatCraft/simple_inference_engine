@@ -77,6 +77,8 @@ __kernel void calc_mac_relu(
         temp += (x[x_start+i] * w[w_start+i]);
     }
 
+    // bias
+
     // activation
     if (temp>=0){
         y[y_start] = temp;
